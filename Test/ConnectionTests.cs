@@ -1,7 +1,5 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
-using System.Text;
 using System.Threading.Tasks;
 using Moq;
 using NUnit.Framework;
@@ -48,7 +46,7 @@ namespace RudderStack.Test
             config.SetTimeout(new TimeSpan(0, 0, 1));
             config.SetMaxRetryTime(new TimeSpan(0, 0, 10));
             RudderAnalytics.Initialize(Constants.WRITE_KEY, config);
-            // Calculate working time for Identiy message with invalid host address
+            // Calculate working time for Identity message with invalid host address
             watch.Start();
             Actions.Identify(RudderAnalytics.Client);
             watch.Stop();
@@ -114,16 +112,16 @@ namespace RudderStack.Test
             Assert.AreEqual(0, RudderAnalytics.Client.Statistics.Failed);
         }
 
-        static void LoggingHandler(Logger.Level level, string message, IDictionary<string, object> args)
+        static void LoggingHandler(Logger.Level level, string message, string[,] args)
         {
             if (args != null)
             {
-                foreach (string key in args.Keys)
+                for (var i = 0; i < args.GetLength(0); i++)
                 {
-                    message += String.Format(" {0}: {1},", "" + key, "" + args[key]);
+                    message += string.Format(" {0}: {1},", "" + args[i,0], "" + args[i,1]);
                 }
             }
-            Console.WriteLine(String.Format("[ConnectionTests] [{0}] {1}", level, message));
+            Console.WriteLine(string.Format("[ConnectionTest] [{0}] {1}", level, message));
         }
     }
 }

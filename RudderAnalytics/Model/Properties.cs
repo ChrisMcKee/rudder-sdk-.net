@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 
 namespace RudderStack.Model
 {
-    public class Properties : Dict
+    public class Properties : Dictionary<string, object>
     {
     }
 }

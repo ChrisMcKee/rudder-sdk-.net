@@ -1,10 +1,5 @@
 using NUnit.Framework;
 
-using System.Collections.Generic;
-
-using RudderStack;
-using RudderStack.Model;
-
 namespace RudderStack.Test
 {
     [TestFixture()]

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
-using RudderStack.Model;
-
-namespace RudderStack.Test
+﻿namespace RudderStack.Test
 {
 	public class Actions
 	{

@@ -10,14 +10,13 @@ namespace RudderStack.Flush
         /// <summary>
         /// Creates a series of actions into a batch that we can send to the server
         /// </summary>
-        private IBatchFactory _batchFactory;
+        private readonly IBatchFactory _batchFactory;
         /// <summary>
         /// Performs the actual HTTP request to our server
         /// </summary>
-        private IRequestHandler _requestHandler;
+        private readonly IRequestHandler _requestHandler;
 
-        internal BlockingFlushHandler(IBatchFactory batchFactory,
-                                 IRequestHandler requestHandler)
+        internal BlockingFlushHandler(IBatchFactory batchFactory, IRequestHandler requestHandler)
         {
 
             this._batchFactory = batchFactory;
@@ -38,9 +37,9 @@ namespace RudderStack.Flush
             // do nothing
         }
 
-        public async Task FlushAsync()
+        public Task FlushAsync()
         {
-            // do nothing
+            return Task.CompletedTask;
         }
 
         /// <summary>

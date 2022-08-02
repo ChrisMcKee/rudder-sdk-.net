@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace RudderStack.Test
+﻿namespace RudderStack.Test
 {
 	public class Constants
 	{

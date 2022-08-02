@@ -1,11 +1,12 @@
 using System;
+using System.Collections.Generic;
 
 namespace RudderStack.Model
 {
     public class RudderOptions
     {
         public string AnonymousId { get; private set; }
-        public Dict Integrations { get; private set; }
+        public Dictionary<string,object> Integrations { get; private set; }
         public DateTime? Timestamp { get; private set; }
         public RudderContext Context { get; private set; }
 
@@ -15,7 +16,7 @@ namespace RudderStack.Model
         /// </summary>
         public RudderOptions ()
         {
-            this.Integrations = new Dict ();
+            this.Integrations = new Dictionary<string,object>();
             this.Context = new RudderContext ();
         }
 
@@ -67,7 +68,7 @@ namespace RudderStack.Model
         /// <param name="enabled">If set to <c>true</c>, then the integration is enabled.</param>
         public RudderOptions SetIntegration (string integration, bool enabled)
         {
-            this.Integrations.Add (integration, enabled);
+            this.Integrations.Add(integration, enabled.ToString());
             return this;
         }
 
@@ -84,9 +85,9 @@ namespace RudderStack.Model
         /// </summary>
         /// <param name="integration">The integration name.</param>
         /// <param name="value">Dict value</param>
-        public RudderOptions SetIntegration (string integration, Dict value)
+        public RudderOptions SetIntegration (string integration, Dictionary<string,object> value)
         {
-            this.Integrations.Add (integration, value);
+            this.Integrations.Add(integration, value.ToString());
             return this;
         }
 

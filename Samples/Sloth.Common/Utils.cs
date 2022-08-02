@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using RudderStack;
 
 namespace Sloth.Common
@@ -22,11 +21,10 @@ namespace Sloth.Common
             //TrialsEndsAndUserU1RequestsAccountToBeDeleted(user1Id, user2Id, accountId);
         }
 
-        public static Logger.LogHandler LoggerOnHandlers = (level, message, args) =>
+        public static readonly Logger.LogHandler LoggerOnHandlers = (level, message, args) =>
         {
             if (args != null)
-                message = args.Keys.Aggregate(message,
-                    (current, key) => current + $" {"" + key}: {"" + args[key]},");
+             //   message = args.Aggregate(message, (current, a) => current + $" {"" + a[0]}: {"" + a[1]},");
 
             Console.WriteLine($"[{level}] {message}");
         };

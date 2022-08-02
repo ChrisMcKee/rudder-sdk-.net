@@ -3,7 +3,7 @@ using RudderStack.Model;
 
 namespace RudderStack.Flush
 {
-    class ActionSizeCalculator
+    internal static class ActionSizeCalculator
     {
         public static int Calculate(BaseAction action)
         {

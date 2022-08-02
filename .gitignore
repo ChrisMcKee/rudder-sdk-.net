@@ -118,3 +118,5 @@ UpgradeLog*
 .DS_STORE
 /.vs
 /.vscode
+
+.idea/

@@ -1,8 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
 namespace RudderStack.Exception
 {
     public class NotInitializedException : System.Exception

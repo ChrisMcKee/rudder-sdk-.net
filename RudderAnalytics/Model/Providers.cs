@@ -1,11 +1,11 @@
-using System;
+using System.Collections.Generic;
 
 namespace RudderStack.Model
 {
     /// <summary>
     /// Providers is a context object that helps specify which providers this action should go to.
     /// </summary>
-    public class Providers : Dict
+    public class Providers : Dictionary<string,object>
     {
         public Providers ()
         {
@@ -19,7 +19,7 @@ namespace RudderStack.Model
         /// True is default.</param>
         /// <returns>The Providers object for chaining.</returns>
         public Providers SetDefault(bool enabled) {
-            this.Add ("all", enabled);
+            this.Add ("all", enabled.ToString());
             return this;
         }
 
@@ -31,7 +31,7 @@ namespace RudderStack.Model
         /// <param name="enabled">True for enabled, false for disabled.</param>
         /// <returns>The Providers object for chaining.</returns>
         public Providers SetEnabled(string providerName, bool enabled) {
-            this.Add (providerName, enabled);
+            this.Add (providerName, enabled.ToString());
             return this;
         }
 

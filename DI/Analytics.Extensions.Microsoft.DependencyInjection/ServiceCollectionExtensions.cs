@@ -1,5 +1,4 @@
 ﻿using System;
-using RudderStack;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace RudderStack

@@ -1,6 +1,7 @@
 using System;
 using NUnit.Framework;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using RudderStack.Request;
 using Moq;
 using RudderStack.Model;
@@ -18,9 +19,10 @@ namespace RudderStack.Test
             _mockRequestHandler = new Mock<IRequestHandler>();
             _mockRequestHandler
                 .Setup(x => x.MakeRequest(It.IsAny<Batch>()))
-                .Returns(async (Batch b) =>
+                .Returns((Batch b) =>
                 {
                     b.batch.ForEach(_=>RudderAnalytics.Client.Statistics.IncrementSucceeded());
+                    return Task.CompletedTask;
                 });
 
             RudderAnalytics.Dispose();
@@ -42,9 +44,9 @@ namespace RudderStack.Test
                 { "email", "friends@rudder.com" }
             };
             var options = new Model.RudderOptions()
-                .SetIntegration("Vero", new Model.Dict() {
+                .SetIntegration("Vero", new Dictionary<string,object>() {
                     {
-                        "tags", new Model.Dict() {
+                        "tags", new Dictionary<string,object> {
                             { "id", "235FAG" },
                             { "action", "add" },
                             { "values", new string[] {"warriors", "giants", "niners"} }
@@ -99,17 +101,16 @@ namespace RudderStack.Test
             Assert.AreEqual(0, RudderAnalytics.Client.Statistics.Failed);
         }
 
-        static void LoggingHandler(Logger.Level level, string message, IDictionary<string, object> args)
+        static void LoggingHandler(Logger.Level level, string message, string[,] args)
         {
             if (args != null)
             {
-                foreach (string key in args.Keys)
+                for (var i = 0; i < args.GetLength(0); i++)
                 {
-                    message += String.Format(" {0}: {1},", "" + key, "" + args[key]);
+                    message += string.Format(" {0}: {1},", "" + args[i,0], "" + args[i,1]);
                 }
             }
             Console.WriteLine(String.Format("[ActionTests] [{0}] {1}", level, message));
         }
     }
 }
-

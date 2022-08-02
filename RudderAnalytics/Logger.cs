@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-
-using RudderStack.Model;
-
-namespace RudderStack
+﻿namespace RudderStack
 {
     /// <summary>
     /// Analytics Logging
@@ -30,14 +25,14 @@ namespace RudderStack
         /// <param name="level">The <see cref="RudderStack.Logger.Level"/> of the log event (debug, info, warn, error)</param>
         /// <param name="message">The log message</param>
         /// <param name="args">Optional arguments for the message</param>
-        public delegate void LogHandler(Level level, string message, IDictionary<string, object> args);
+        public delegate void LogHandler(Level level, string message, string[,] args);
         public static event LogHandler Handlers;
 
         #endregion
 
-        private static void _Log(Level level, string message, IDictionary<string, object> args)
+        private static void _Log(Level level, string message, string[,] args)
         {
-            if (Handlers != null) Handlers(level, message, args);
+            Handlers?.Invoke(level, message, args);
         }
 
         internal static void Debug(string message)
@@ -45,7 +40,7 @@ namespace RudderStack
             _Log(Level.DEBUG, message, null);
         }
 
-        internal static void Debug(string message, IDictionary<string, object> args)
+        internal static void Debug(string message, string[,] args)
         {
             _Log(Level.DEBUG, message, args);
         }
@@ -55,7 +50,7 @@ namespace RudderStack
             _Log(Level.INFO, message, null);
         }
 
-        internal static void Info(string message, IDictionary<string, object> args)
+        internal static void Info(string message, string[,] args)
         {
             _Log(Level.INFO, message, args);
         }
@@ -64,7 +59,7 @@ namespace RudderStack
             _Log(Level.WARN, message, null);
         }
 
-        internal static void Warn(string message, IDictionary<string, object> args)
+        internal static void Warn(string message, string[,] args)
         {
             _Log(Level.WARN, message, args);
         }
@@ -73,7 +68,7 @@ namespace RudderStack
             _Log(Level.ERROR, message, null);
         }
 
-        internal static void Error(string message, IDictionary<string, object> args)
+        internal static void Error(string message, string[,] args)
         {
             _Log(Level.ERROR, message, args);
         }

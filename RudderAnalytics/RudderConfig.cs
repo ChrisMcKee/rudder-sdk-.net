@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using RudderStack.Model;
 
 namespace RudderStack
@@ -25,7 +23,7 @@ namespace RudderStack
         internal int FlushAt { get; set; }
 
         internal bool Async { get; set; }
-        
+
         internal TimeSpan Timeout { get; set; }
 
         internal TimeSpan? MaxRetryTime { get; set; }
@@ -79,7 +77,7 @@ namespace RudderStack
 
         private static string GetDefaultUserAgent()
         {
-            var lib = new RudderContext()["library"] as Dict;
+            var lib = new RudderContext()["library"] as Dictionary<string,object>;
             return $"{lib["name"]}/{lib["version"]}";
         }
 
@@ -139,16 +137,6 @@ namespace RudderStack
             return this;
         }
 
-        /// <summary>
-        /// Sets the maximum amount of messages to send per batch
-        /// </summary>
-        /// <param name="maxBatchSize"></param>
-        /// <returns></returns>
-        [Obsolete("Use the new method SetFlushAt")]
-        public RudderConfig SetMaxBatchSize(int maxBatchSize)
-        {
-            return SetFlushAt(maxBatchSize);
-        }
 
         /// <summary>
         /// Sets the maximum amount of messages to send per batch

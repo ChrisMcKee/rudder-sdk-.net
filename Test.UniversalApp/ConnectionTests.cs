@@ -1,13 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Diagnostics;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using Moq;
-using RudderStack.Request;
-using RudderStack.Model;
-using System.Threading.Tasks;
-
 namespace RudderStack.Test
 {
 	[TestClass]
@@ -116,13 +106,13 @@ namespace RudderStack.Test
 			Assert.AreEqual(0, Analytics.Client.Statistics.Failed);
 		}
 
-		static void LoggingHandler(Logger.Level level, string message, IDictionary<string, object> args)
+		static void LoggingHandler(Logger.Level level, string message, string[,] args)
 		{
 			if (args != null)
 			{
-				foreach (string key in args.Keys)
+				for (var i = 0; i < args.GetLength(0); i++)
 				{
-					message += String.Format(" {0}: {1},", "" + key, "" + args[key]);
+					message += string.Format(" {0}: {1},", "" + args[i,0], "" + args[i,1]);
 				}
 			}
 			Debug.WriteLine(String.Format("[ConnectionTests] [{0}] {1}", level, message));

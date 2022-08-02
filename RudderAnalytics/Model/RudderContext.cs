@@ -1,8 +1,8 @@
-﻿using System;
+﻿using System.Collections.Generic;
 
 namespace RudderStack.Model
 {
-    public class RudderContext : Dict
+    public class RudderContext : Dictionary<string,object>
     {
         /// <summary>
         /// Provides additional information about the context of an analytics call,
@@ -10,14 +10,14 @@ namespace RudderStack.Model
         /// </summary>
         public RudderContext() {
             // default the context library
-            this.Add("library", new Dict() {
+            this.Add("library", new Dictionary<string,object> {
                 { "name", "RudderAnalytics.NET" },
                 { "version", RudderAnalytics.VERSION }
             });
         }
 
         public new RudderContext Add(string key, object val) {
-            base.Add (key, val);
+            base.Add(key, val);
             return this;
         }
     }

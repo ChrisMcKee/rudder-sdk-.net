@@ -5,7 +5,7 @@ using RudderStack.Model;
 namespace RudderStack.Flush
 {
     /// <summary>
-    /// A component responsibe for flushing an action to the server
+    /// A component responsible for flushing an action to the server
     /// </summary>
     public interface IFlushHandler : IDisposable
     {

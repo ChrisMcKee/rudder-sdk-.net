@@ -1,8 +1,5 @@
 using Microsoft.Extensions.DependencyInjection;
 using NUnit.Framework;
-using System;
-using System.Collections.Generic;
-using System.Text;
 using RudderStack.Extensions;
 
 
@@ -13,7 +10,7 @@ namespace RudderStack.Test.Extensions
     {
 
         [Test]
-        public void TestInicializationOfClientWithServicesCollection()
+        public void TestInitializationOfClientWithServicesCollection()
         {
             var writeKey = "writeKey";
             var services = new ServiceCollection();
@@ -29,7 +26,7 @@ namespace RudderStack.Test.Extensions
         }
 
         [Test]
-        public void TestInicializationOfClientWithServicesCollectionAndConfig()
+        public void TestInitializationOfClientWithServicesCollectionAndConfig()
         {
             var writeKey = "writeKey";
             var threadCount = 10;

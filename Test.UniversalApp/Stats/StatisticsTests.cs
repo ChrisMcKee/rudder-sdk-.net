@@ -1,9 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using RudderStack.Stats;
-using System;
-using System.Collections.Generic;
-using System.Text;
-
 namespace RudderStack.Test.Stats
 {
     [TestClass]

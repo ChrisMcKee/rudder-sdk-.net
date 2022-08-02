@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using RudderStack.Model;
 
 namespace RudderStack.Test
@@ -10,7 +10,8 @@ namespace RudderStack.Test
 
         public static Properties Properties()
         {
-            return new Properties() {
+            return new Properties()
+            {
                 { "Success", true },
                 { "When", DateTime.Now }
             };
@@ -18,14 +19,15 @@ namespace RudderStack.Test
 
         public static Traits Traits()
         {
-            return new Traits() {
+            return new Traits()
+            {
                 { "Subscription Plan", "Free" },
                 { "Friends", 30 },
                 { "Joined", DateTime.Now },
                 { "Cool", true },
-                { "Company", new Dict () { { "name", "Initech, Inc " } } },
+                { "Company", new Dictionary<string, object> { { "name", "Initech, Inc " } } },
                 { "Revenue", 40.32 },
-                { "Don't Submit This, Kids", new UnauthorizedAccessException () }
+                { "Don't Submit This, Kids", new UnauthorizedAccessException() }
             };
         }
 
@@ -40,7 +42,7 @@ namespace RudderStack.Test
                 .SetContext(new RudderContext()
                     .Add("ip", "12.212.12.49")
                     .Add("language", "en-us")
-            );
+                );
         }
 
         public static void Identify(RudderClient client)

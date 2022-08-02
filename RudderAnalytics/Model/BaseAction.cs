@@ -1,5 +1,5 @@
 using System;
-
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace RudderStack.Model
@@ -19,7 +19,7 @@ namespace RudderStack.Model
         public RudderContext Context { get; set; }
 
         [JsonProperty(PropertyName="integrations")]
-        public Dict Integrations { get; set; }
+        public Dictionary<string,object> Integrations { get; set; }
 
         [JsonProperty(PropertyName="anonymousId")]
         public string AnonymousId { get; set; }

@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 
 namespace RudderStack.Flush
 {
-
     internal class AsyncIntervalFlushHandler : IAsyncFlushHandler
     {
         /// <summary>
@@ -54,9 +53,8 @@ namespace RudderStack.Flush
         private void RunInterval()
         {
             var initialDelay = _queue.Count == 0 ? _flushIntervalInMillis : 0;
-            _timer = new Timer(new TimerCallback(async (b) => await PerformFlush()), new { }, initialDelay, _flushIntervalInMillis);
+            _timer = new Timer(async (b) => await PerformFlush().ConfigureAwait(false), new { }, initialDelay, _flushIntervalInMillis);
         }
-
 
         private async Task PerformFlush()
         {
@@ -68,7 +66,7 @@ namespace RudderStack.Flush
 
             try
             {
-                await FlushImpl();
+                await FlushImpl().ConfigureAwait(false);
             }
             catch
             {
@@ -110,50 +108,41 @@ namespace RudderStack.Flush
                 {
                     if (!_queue.TryDequeue(out var action)) break;
 
-                    Logger.Debug("Dequeued action in async loop.", new Dict{
-                            { "message id", action.MessageId },
-                            { "queue size", _queue.Count }
-                         });
+                    Logger.Debug("Dequeued action in async loop.", new string[,] { { "message id", action.MessageId }, { "queue size", _queue.Count.ToString() } });
 
                     current.Add(action);
                     currentSize += action.Size;
                 } while (!_queue.IsEmpty && current.Count < _maxBatchSize && !_continue.Token.IsCancellationRequested && currentSize < BatchMaxSize - ActionMaxSize);
 
-                if (current.Count > 0)
-                {
-                    // we have a batch that we're trying to send
-                    Batch batch = _batchFactory.Create(current);
+                if (current.Count <= 0) continue;
 
-                    Logger.Debug("Created flush batch.", new Dict {
-                        { "batch size", current.Count }
-                    });
+                // we have a batch that we're trying to send
+                Batch batch = _batchFactory.Create(current);
 
-                    // make the request here
-                    await _requestHandler.MakeRequest(batch);
+                Logger.Debug("Created flush batch.", new string[,] { { "batch size", current.Count.ToString() } });
 
-                    // mark the current batch as null
-                    current = new List<BaseAction>();
-                    currentSize = 0;
-                }
+                // make the request here
+                await _requestHandler.MakeRequest(batch).ConfigureAwait(false);
+
+                // mark the current batch as null
+                current = new List<BaseAction>();
+                currentSize = 0;
             }
         }
 
-        public async Task Process(BaseAction action)
+        public Task Process(BaseAction action)
         {
             action.Size = ActionSizeCalculator.Calculate(action);
 
             if (action.Size > ActionMaxSize)
             {
                 Logger.Error($"Action was dropped cause is bigger than {ActionMaxSize} bytes");
-                return;
+                return Task.CompletedTask;
             }
 
             _queue.Enqueue(action);
 
-            Logger.Debug("Enqueued action in async loop.", new Dict{
-                            { "message id", action.MessageId },
-                            { "queue size", _queue.Count }
-                         });
+            Logger.Debug("Enqueued action in async loop.", new string[,] { { "message id", action.MessageId }, { "queue size", _queue.Count.ToString() } });
 
             if (_queue.Count >= _maxQueueSize)
             {
@@ -161,17 +150,15 @@ namespace RudderStack.Flush
                 _ = PerformFlush();
             }
 
+            return Task.CompletedTask;
         }
 
         public void Dispose()
         {
             Logger.Debug("Disposing AsyncIntervalFlushHandler");
             _timer?.Dispose();
-#if !NET35
             _semaphore?.Dispose();
-#endif
             _continue?.Cancel();
         }
-
     }
 }

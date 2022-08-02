@@ -65,7 +65,7 @@ namespace RudderStack
                 {
                     if (config.MaxRetryTime.HasValue)
                     {
-                        requestHandler = new BlockingRequestHandler(this, config.Timeout, new Backo(max: (Convert.ToInt32(config.MaxRetryTime.Value.TotalSeconds) * 1000), jitter: 5000));
+                        requestHandler = new BlockingRequestHandler(this, config.Timeout, new Backoff(max: (Convert.ToInt32(config.MaxRetryTime.Value.TotalSeconds) * 1000), jitter: 5000));
                     }
                     else 
                     {
@@ -126,7 +126,7 @@ namespace RudderStack
         /// <inheritdoc />
         public void Identify(string userId, IDictionary<string, object> traits, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && !HasAnonymousId(options))
+            if (string.IsNullOrEmpty(userId) && !HasAnonymousId(options))
                 throw new InvalidOperationException("Please supply a valid userId to Identify.");
 
             Enqueue(new Identify(userId, traits, options));
@@ -151,10 +151,10 @@ namespace RudderStack
         /// <inheritdoc />
         public void Group(string userId, string groupId, IDictionary<string, object> traits, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && !HasAnonymousId(options))
+            if (string.IsNullOrEmpty(userId) && !HasAnonymousId(options))
                 throw new InvalidOperationException("Please supply a valid userId or anonymousId to call #Group.");
 
-            if (String.IsNullOrEmpty(groupId))
+            if (string.IsNullOrEmpty(groupId))
                 throw new InvalidOperationException("Please supply a valid groupId to call #Group.");
 
             Enqueue(new Group(userId, groupId, traits, options));
@@ -185,10 +185,10 @@ namespace RudderStack
         /// <inheritdoc />
         public void Track(string userId, string eventName, IDictionary<string, object> properties, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && !HasAnonymousId(options))
+            if (string.IsNullOrEmpty(userId) && !HasAnonymousId(options))
                 throw new InvalidOperationException("Please supply a valid userId or anonymousId to call #Track.");
 
-            if (String.IsNullOrEmpty(eventName))
+            if (string.IsNullOrEmpty(eventName))
                 throw new InvalidOperationException("Please supply a valid event to call #Track.");
 
             Enqueue(new Track(userId, eventName, properties, options));
@@ -207,10 +207,10 @@ namespace RudderStack
         /// <inheritdoc />
         public void Alias(string previousId, string userId, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(previousId))
+            if (string.IsNullOrEmpty(previousId))
                 throw new InvalidOperationException("Please supply a valid 'previousId' to Alias.");
 
-            if (String.IsNullOrEmpty(userId))
+            if (string.IsNullOrEmpty(userId))
                 throw new InvalidOperationException("Please supply a valid 'userId' to Alias.");
 
             Enqueue(new Alias(previousId, userId, options));
@@ -253,10 +253,10 @@ namespace RudderStack
         /// <inheritdoc />
         public void Page(string userId, string name, string category, IDictionary<string, object> properties, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && !HasAnonymousId(options))
+            if (string.IsNullOrEmpty(userId) && !HasAnonymousId(options))
                 throw new InvalidOperationException("Please supply a valid userId or anonymousId to call #Page.");
 
-            if (String.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
                 throw new InvalidOperationException("Please supply a valid name to call #Page.");
 
             Enqueue(new Page(userId, name, category, properties, options));
@@ -299,10 +299,10 @@ namespace RudderStack
         /// <inheritdoc />
         public void Screen(string userId, string name, string category, IDictionary<string, object> properties, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && !HasAnonymousId(options))
+            if (string.IsNullOrEmpty(userId) && !HasAnonymousId(options))
                 throw new InvalidOperationException("Please supply a valid userId or anonymousId to call #Screen.");
 
-            if (String.IsNullOrEmpty(name))
+            if (string.IsNullOrEmpty(name))
                 throw new InvalidOperationException("Please supply a valid name to call #Screen.");
 
             Enqueue(new Screen(userId, name, category, properties, options));
@@ -342,9 +342,9 @@ namespace RudderStack
             this.Statistics.IncrementSubmitted();
         }
 
-        protected void ensureId(String userId, RudderOptions options)
+        protected void ensureId(string userId, RudderOptions options)
         {
-            if (String.IsNullOrEmpty(userId) && String.IsNullOrEmpty(options.AnonymousId))
+            if (string.IsNullOrEmpty(userId) && string.IsNullOrEmpty(options.AnonymousId))
                 throw new InvalidOperationException("Please supply a valid id (either userId or anonymousId.");
         }
 
@@ -369,7 +369,7 @@ namespace RudderStack
         /// <param name="options">Options.</param>
         internal static bool HasAnonymousId(RudderOptions options)
         {
-            return options != null && !String.IsNullOrEmpty(options.AnonymousId);
+            return options != null && !string.IsNullOrEmpty(options.AnonymousId);
         }
 
         #endregion

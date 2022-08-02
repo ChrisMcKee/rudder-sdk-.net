@@ -4,7 +4,6 @@ using RudderStack.Flush;
 using RudderStack.Model;
 using RudderStack.Request;
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -274,16 +273,17 @@ namespace RudderStack.Test.Flush
             var response = new Queue<Task>(tasks);
             return () => response.Count > 0 ? response.Dequeue() : null;
         }
-        static void LoggingHandler(Logger.Level level, string message, IDictionary<string, object> args)
+
+        static void LoggingHandler(Logger.Level level, string message, string[,] args)
         {
             if (args != null)
             {
-                foreach (string key in args.Keys)
+                for (var i = 0; i < args.GetLength(0); i++)
                 {
-                    message += String.Format(" {0}: {1},", "" + key, "" + args[key]);
+                    message += string.Format(" {0}: {1},", "" + args[i,0], "" + args[i,1]);
                 }
             }
-            Console.WriteLine(String.Format("[FlushTests] [{0}] {1}", level, message));
+            Console.WriteLine(string.Format("[FlushTests] [{0}] {1}", level, message));
         }
     }
 }

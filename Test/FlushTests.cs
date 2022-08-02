@@ -1,5 +1,4 @@
 using System;
-using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Moq;
@@ -39,7 +38,8 @@ namespace RudderStack.Test
         [Test()]
         public void SynchronousFlushTest()
         {
-            var client = new RudderClient(Constants.WRITE_KEY, new RudderConfig().SetAsync(false), _mockRequestHandler.Object);
+            var client = new RudderClient(Constants.WRITE_KEY, new RudderConfig().SetAsync(false),
+                _mockRequestHandler.Object);
             RudderAnalytics.Initialize(client);
             RudderAnalytics.Client.Succeeded += Client_Succeeded;
             RudderAnalytics.Client.Failed += Client_Failed;
@@ -58,7 +58,8 @@ namespace RudderStack.Test
         [Test()]
         public void AsynchronousFlushTest()
         {
-            var client = new RudderClient(Constants.WRITE_KEY, new RudderConfig().SetAsync(true), _mockRequestHandler.Object);
+            var client = new RudderClient(Constants.WRITE_KEY, new RudderConfig().SetAsync(true),
+                _mockRequestHandler.Object);
             RudderAnalytics.Initialize(client);
 
             RudderAnalytics.Client.Succeeded += Client_Succeeded;
@@ -75,7 +76,7 @@ namespace RudderStack.Test
             Assert.AreEqual(0, RudderAnalytics.Client.Statistics.Failed);
         }
 
-	[Test()]
+        [Test()]
         public async Task PerformanceTest()
         {
             var client = new RudderClient(Constants.WRITE_KEY, new RudderConfig(), _mockRequestHandler.Object);
@@ -90,9 +91,9 @@ namespace RudderStack.Test
 
             Console.WriteLine("starting to trigger events");
             RunTests(RudderAnalytics.Client, trials);
-            Console.WriteLine("finnishing to trigger events");
+            Console.WriteLine("finishing to trigger events");
 
-            RudderAnalytics.Client.Flush();
+            await RudderAnalytics.Client.FlushAsync();
 
             TimeSpan duration = DateTime.Now.Subtract(start);
 
@@ -114,27 +115,27 @@ namespace RudderStack.Test
 
         void Client_Failed(BaseAction action, System.Exception e)
         {
-            Console.WriteLine(String.Format("Action [{0}] {1} failed : {2}",
+            Console.WriteLine(string.Format("Action [{0}] {1} failed : {2}",
                 action.MessageId, action.Type, e.Message));
         }
 
         void Client_Succeeded(BaseAction action)
         {
-            Console.WriteLine(String.Format("Action [{0}] {1} succeeded.",
+            Console.WriteLine(string.Format("Action [{0}] {1} succeeded.",
                 action.MessageId, action.Type));
         }
 
-        static void LoggingHandler(Logger.Level level, string message, IDictionary<string, object> args)
+        static void LoggingHandler(Logger.Level level, string message, string[,] args)
         {
             if (args != null)
             {
-                foreach (string key in args.Keys)
+                for (var i = 0; i < args.GetLength(0); i++)
                 {
-                    message += String.Format(" {0}: {1},", "" + key, "" + args[key]);
+                    message += string.Format(" {0}: {1},", "" + args[i,0], "" + args[i,1]);
                 }
             }
-            Console.WriteLine(String.Format("[FlushTests] [{0}] {1}", level, message));
+
+            Console.WriteLine("[FlushTests] [{0}] {1}", level, message);
         }
     }
 }
-

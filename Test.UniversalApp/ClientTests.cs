@@ -1,11 +1,3 @@
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-
-using System;
-using System.Collections.Generic;
-
-using RudderStack;
-using RudderStack.Model;
-
 namespace RudderStack.Test
 {
 	[TestClass]

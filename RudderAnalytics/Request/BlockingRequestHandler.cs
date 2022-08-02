@@ -1,47 +1,20 @@
 using System;
 using System.Diagnostics;
 using System.Net;
-#if NET35
-#else
 using System.Net.Http;
 using System.Net.Http.Headers;
-#endif
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
 using RudderStack.Exception;
 using RudderStack.Model;
-using RudderStack.Stats;
-using System.IO;
-using System.IO.Compression;
 
 namespace RudderStack.Request
 {
-#if NET35
-    internal interface IHttpClient
-    {
-        WebHeaderCollection Headers { get; set; }
-        IWebProxy Proxy { get; set; }
-        byte[] UploadData(Uri address, string method, byte[] data);
-    }
-
-    internal class HttpClient : WebClient, IHttpClient
-    {
-        public TimeSpan Timeout { get; set; }
-
-        protected override WebRequest GetWebRequest(Uri address)
-        {
-            WebRequest w = base.GetWebRequest(address);
-            if (Timeout.Milliseconds != 0)
-                w.Timeout = Convert.ToInt32(Timeout.Milliseconds);
-            return w;
-        }
-    }
-#else
     class WebProxy : System.Net.IWebProxy
     {
         private string _proxy;
+        private static Uri NullUrlObj = new Uri("");
 
         public WebProxy(string proxy)
         {
@@ -49,28 +22,21 @@ namespace RudderStack.Request
             GetProxy(new Uri(proxy)); // ** What does this do?
         }
 
-        public System.Net.ICredentials Credentials
-        {
-            get; set;
-        }
+        public System.Net.ICredentials Credentials { get; set; }
 
         public Uri GetProxy(Uri destination)
         {
-            if (!String.IsNullOrWhiteSpace(destination.ToString()))
+            if (!string.IsNullOrWhiteSpace(destination.ToString()))
                 return destination;
-            else
-                return new Uri("");
+
+            return NullUrlObj;
         }
 
         public bool IsBypassed(Uri host)
         {
-            if (!String.IsNullOrWhiteSpace(host.ToString()))
-                return true;
-            else
-                return false;
+            return !string.IsNullOrWhiteSpace(host.ToString());
         }
     }
-#endif
 
     internal class BlockingRequestHandler : IRequestHandler
     {
@@ -79,36 +45,32 @@ namespace RudderStack.Request
         /// </summary>
         private readonly RudderClient _client;
 
-        private readonly Backo _backo;
+        private readonly Backoff _backoff;
 
         private readonly int _maxBackOffDuration;
 
-#if NET35
-        private readonly IHttpClient _httpClient;
-#else
         private readonly HttpClient _httpClient;
-#endif
+
         /// <summary>
         /// The maximum amount of time to wait before calling
         /// the HTTP flush a timeout failure.
         /// </summary>
         public TimeSpan Timeout { get; set; }
 
-        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout) : this(client, timeout, null, new Backo(max: 10000, jitter: 5000)) // Set maximum waiting limit to 10s and jitter to 5s
+        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout) : this(client, timeout, null,
+            new Backoff(max: 10000, jitter: 5000)) // Set maximum waiting limit to 10s and jitter to 5s
         {
         }
-        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout, Backo backo) : this(client, timeout, null, backo) 
-        {
-        }
-#if NET35
 
-        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout, IHttpClient httpClient, Backo backo)
-#else
-        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout, HttpClient httpClient, Backo backo)
-#endif
+        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout, Backoff backoff) : this(client, timeout,
+            null, backoff)
+        {
+        }
+
+        internal BlockingRequestHandler(RudderClient client, TimeSpan timeout, HttpClient httpClient, Backoff backoff)
         {
             this._client = client;
-            _backo = backo;
+            _backoff = backoff;
 
             this.Timeout = timeout;
 
@@ -116,37 +78,25 @@ namespace RudderStack.Request
             {
                 _httpClient = httpClient;
             }
-            // Create HttpClient instance in .Net 3.5
-#if NET35
-            if (httpClient == null)
-                _httpClient = new HttpClient { Timeout = Timeout };
-#else
-            var handler = new HttpClientHandler();
-#endif
-
-            // Set proxy information
-            if (!string.IsNullOrEmpty(_client.Config.Proxy))
+            else
             {
-#if NET35
-                _httpClient.Proxy = new WebProxy(_client.Config.Proxy);
-#else
-                handler.Proxy = new WebProxy(_client.Config.Proxy);
-                handler.UseProxy = true;
-#endif
+                var handler = new HttpClientHandler();
+
+                // Set proxy information
+                if (!string.IsNullOrEmpty(_client.Config.Proxy))
+                {
+                    handler.Proxy = new WebProxy(_client.Config.Proxy);
+                    handler.UseProxy = true;
+                }
+
+                // Initialize HttpClient instance with given configuration
+                _httpClient = new HttpClient(handler) { Timeout = Timeout };
             }
 
-            // Initialize HttpClient instance with given configuration
-#if !NET35
-            if (httpClient == null)
-                _httpClient = new HttpClient(handler) { Timeout = Timeout };
-#endif
             // Send user agent in the form of {library_name}/{library_version} as per RFC 7231.
-            var szUserAgent = _client.Config.UserAgent;
-#if NET35
-            _httpClient.Headers.Set("User-Agent", szUserAgent);
-#else
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", szUserAgent);
-#endif
+            var userAgent = _client.Config.UserAgent;
+
+            _httpClient.DefaultRequestHeaders.Add("User-Agent", userAgent);
         }
 
         public async Task MakeRequest(Batch batch)
@@ -163,12 +113,9 @@ namespace RudderStack.Request
                 string json = JsonConvert.SerializeObject(batch);
 
                 // Basic Authentication
-#if NET35
-                _httpClient.Headers.Set("Authorization", "Basic " + BasicAuthHeader(batch.WriteKey, string.Empty));
-                _httpClient.Headers.Set("Content-Type", "application/json; charset=utf-8");
-#else
-                _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", BasicAuthHeader(batch.WriteKey, string.Empty));
-#endif
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue("Basic", BasicAuthHeader(batch.WriteKey, string.Empty));
+
                 // Prepare request data;
                 var requestData = Encoding.UTF8.GetBytes(json);
 
@@ -192,75 +139,19 @@ namespace RudderStack.Request
 //                     }
 //                 }
 
-                Logger.Info("Sending analytics request to RudderStack ..", new Dict
-                {
-                    { "batch id", batch.MessageId },
-                    { "json size", json.Length },
-                    { "batch size", batch.batch.Count }
-                });
+                Logger.Info("Sending analytics request to RudderStack ..",
+                    new string[,]
+                    {
+                        { "batch id", batch.MessageId }, { "json size", json.Length.ToString() },
+                        { "batch size", batch.batch.Count.ToString() }
+                    });
 
                 // Retries with exponential backoff
                 int statusCode = (int)HttpStatusCode.OK;
                 string responseStr = "";
 
-                while (!_backo.HasReachedMax)
+                while (!_backoff.HasReachedMax)
                 {
-#if NET35
-                    watch.Start();
-
-                    try
-                    {
-                        var response = Encoding.UTF8.GetString(_httpClient.UploadData(uri, "POST", requestData));
-                        watch.Stop();
-
-                        Succeed(batch, watch.ElapsedMilliseconds);
-                        statusCode = 200;
-                        break;
-                    }
-                    catch (WebException ex)
-                    {
-                        watch.Stop();
-
-                        var response = (HttpWebResponse)ex.Response;
-                        statusCode = (response != null) ? (int)response.StatusCode : 0;
-                        if ((statusCode >= 500 && statusCode <= 600) || statusCode == 429 || statusCode == 0)
-                        {
-                            // If status code is greater than 500 and less than 600, it indicates server error
-                            // Error code 429 indicates rate limited.
-                            // Retry uploading in these cases.
-                            Thread.Sleep(_backo.AttemptTime());
-                            if (statusCode == 429)
-                            {
-                                Logger.Info($"Too many request at the moment CurrentAttempt:{_backo.CurrentAttempt} Retrying to send request", new Dict
-                                {
-                                    { "batch id", batch.MessageId },
-                                    { "statusCode", statusCode },
-                                    { "duration (ms)", watch.ElapsedMilliseconds }
-                                });
-                            }
-                            else
-                            {
-                                Logger.Info($"Internal RudderStack Server error CurrentAttempt:{_backo.CurrentAttempt} Retrying to send request", new Dict
-                                {
-                                    { "batch id", batch.MessageId },
-                                    { "statusCode", statusCode },
-                                    { "duration (ms)", watch.ElapsedMilliseconds }
-                                });
-                            }
-                            continue;
-                        }
-                        else
-                        {
-                            //If status code is greater or equal than 400 but not 429 should indicate is client error.
-                            //All other types of HTTP Status code are not errors (Between 100 and 399)
-                            responseStr = String.Format("Status Code {0}. ", statusCode);
-                            responseStr += ex.Message;
-                            break;
-                        }
-
-                    }
-
-#else
                     watch.Start();
 
                     ByteArrayContent content = new ByteArrayContent(requestData);
@@ -278,78 +169,68 @@ namespace RudderStack.Request
                     }
                     catch (TaskCanceledException e)
                     {
-                        Logger.Info("HTTP Post failed with exception of type TaskCanceledException", new Dict
-                        {
-                            { "batch id", batch.MessageId },
-                            { "reason", e.Message },
-                            { "duration (ms)", watch.ElapsedMilliseconds }
-                        });
+                        Logger.Info("HTTP Post failed with exception of type TaskCanceledException",
+                            new string[,]
+                            {
+                                { "batch id", batch.MessageId }, { "reason", e.Message },
+                                { "duration (ms)", watch.ElapsedMilliseconds.ToString() }
+                            });
                         retry = true;
                     }
                     catch (HttpRequestException e)
                     {
-                        Logger.Info("HTTP Post failed with exception of type HttpRequestException", new Dict
-                        {
-                            { "batch id", batch.MessageId },
-                            { "reason", e.Message },
-                            { "duration (ms)", watch.ElapsedMilliseconds }
-                        });
+                        Logger.Info("HTTP Post failed with exception of type HttpRequestException",
+                            new string[,]
+                            {
+                                { "batch id", batch.MessageId }, { "reason", e.Message },
+                                { "duration (ms)", watch.ElapsedMilliseconds.ToString() }
+                            });
                         retry = true;
                     }
 
                     watch.Stop();
                     statusCode = response != null ? (int)response.StatusCode : 0;
 
-                    if (response != null && response.StatusCode == HttpStatusCode.OK)
+                    if (response is { StatusCode: HttpStatusCode.OK })
                     {
                         Succeed(batch, watch.ElapsedMilliseconds);
                         break;
                     }
+
+                    if (statusCode is >= 500 and <= 600 or 429 || retry)
+                    {
+                        // If status code is greater than 500 and less than 600, it indicates server error
+                        // Error code 429 indicates rate limited.
+                        // Retry uploading in these cases.
+                        await _backoff.AttemptAsync().ConfigureAwait(false);
+
+                        Logger.Info(
+                            statusCode == 429
+                                ? $"Too many request at the moment CurrentAttempt:{_backoff.CurrentAttempt} Retrying to send request"
+                                : $"Internal RudderStack Server error CurrentAttempt:{_backoff.CurrentAttempt} Retrying to send request",
+                            new string[,]
+                            {
+                                { "batch id", batch.MessageId }, { "statusCode", statusCode.ToString() },
+                                { "duration (ms)", watch.ElapsedMilliseconds.ToString() }
+                            });
+                    }
                     else
                     {
-                        if ((statusCode >= 500 && statusCode <= 600) || statusCode == 429 || retry)
-                        {
-                            // If status code is greater than 500 and less than 600, it indicates server error
-                            // Error code 429 indicates rate limited.
-                            // Retry uploading in these cases.
-                            await _backo.AttemptAsync();
-                            if (statusCode == 429)
-                            {
-                                Logger.Info($"Too many request at the moment CurrentAttempt:{_backo.CurrentAttempt} Retrying to send request", new Dict
-                                {
-                                    { "batch id", batch.MessageId },
-                                    { "statusCode", statusCode },
-                                    { "duration (ms)", watch.ElapsedMilliseconds }
-                                });
-                            }
-                            else
-                            {
-                                Logger.Info($"Internal RudderStack Server error CurrentAttempt:{_backo.CurrentAttempt} Retrying to send request", new Dict
-                                {
-                                    { "batch id", batch.MessageId },
-                                    { "statusCode", statusCode },
-                                    { "duration (ms)", watch.ElapsedMilliseconds }
-                                });
-                            }
-                        }
-                        else
-                        {
-                            //HTTP status codes smaller than 500 or greater than 600 except for 429 are either Client errors or a correct status
-                            //This means it should not retry 
-                            break;
-                        }
+                        //HTTP status codes smaller than 500 or greater than 600 except for 429 are either Client errors or a correct status
+                        //This means it should not retry
+                        break;
                     }
-#endif
                 }
 
-                var hasBackoReachedMax = _backo.HasReachedMax;
-                if (hasBackoReachedMax || statusCode != (int)HttpStatusCode.OK)
+                var hasBackoffReachedMax = _backoff.HasReachedMax;
+                if (hasBackoffReachedMax || statusCode != (int)HttpStatusCode.OK)
                 {
-                    var message = $"Has Backoff reached max: {hasBackoReachedMax} with number of Attempts:{_backo.CurrentAttempt},\n Status Code: {statusCode}\n, response message: {responseStr}";
+                    var message =
+                        $"Has Backoff reached max: {hasBackoffReachedMax} with number of Attempts:{_backoff.CurrentAttempt},\n Status Code: {statusCode}\n, response message: {responseStr}";
                     Fail(batch, new APIException(statusCode.ToString(), message), watch.ElapsedMilliseconds);
-                    if (_backo.HasReachedMax)
+                    if (_backoff.HasReachedMax)
                     {
-                        _backo.Reset();
+                        _backoff.Reset();
                     }
                 }
             }
@@ -368,12 +249,11 @@ namespace RudderStack.Request
                 _client.RaiseFailure(action, e);
             }
 
-            Logger.Info("RudderStack request failed.", new Dict
-            {
-                { "batch id", batch.MessageId },
-                { "reason", e.Message },
-                { "duration (ms)", duration }
-            });
+            Logger.Info("RudderStack request failed.",
+                new string[,]
+                {
+                    { "batch id", batch.MessageId }, { "reason", e.Message }, { "duration (ms)", duration.ToString() }
+                });
         }
 
         private void Succeed(Batch batch, long duration)
@@ -384,17 +264,13 @@ namespace RudderStack.Request
                 _client.RaiseSuccess(action);
             }
 
-            Logger.Info("RudderStack request successful.", new Dict
-            {
-                { "batch id", batch.MessageId },
-                { "duration (ms)", duration }
-            });
+            Logger.Info("RudderStack request successful.",
+                new string[,] { { "batch id", batch.MessageId }, { "duration (ms)", duration.ToString() } });
         }
 
-        private string BasicAuthHeader(string user, string pass)
+        private static string BasicAuthHeader(string user, string pass)
         {
-            string val = user + ":" + pass;
-            return Convert.ToBase64String(Encoding.UTF8.GetBytes(val));
+            return Convert.ToBase64String(Encoding.UTF8.GetBytes(user + ":" + pass));
         }
     }
 }

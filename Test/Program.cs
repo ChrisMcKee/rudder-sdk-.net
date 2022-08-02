@@ -1,9 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using RudderStack;
-using RudderStack.Test;
 
 namespace RudderStack.Test
 {
@@ -22,7 +17,7 @@ namespace RudderStack.Test
             RudderAnalytics.Client.Flush();
         }
 
-        private static void Logger_Handlers(Logger.Level level, string message, IDictionary<string, object> args)
+        private static void Logger_Handlers(Logger.Level level, string message, string[,] args)
         {
             Console.WriteLine(message);
         }
