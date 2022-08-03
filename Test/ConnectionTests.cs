@@ -70,7 +70,7 @@ namespace RudderStack.Test
             config.SetHost("https://fake.rudder-server.com");
             config.SetTimeout(new TimeSpan(0, 0, 1));
             RudderAnalytics.Initialize(Constants.WRITE_KEY, config);
-            // Calculate working time for Identiy message with invalid host address
+            // Calculate working time for Identity message with invalid host address
             watch.Start();
             Actions.Identify(RudderAnalytics.Client);
             watch.Stop();

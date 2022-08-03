@@ -239,7 +239,7 @@ namespace RudderStack.Test
                 foreach (var testCase in TestCases)
                 {
                     RudderAnalytics.Client.Config.SetHost(DummyServerUrl + testCase.BaseActionUrl);
-                    // Calculate working time for Identiy message with invalid host address
+                    // Calculate working time for Identity message with invalid host address
                     watch.Reset();
                     watch.Start();
                     Actions.Identify(RudderAnalytics.Client);
